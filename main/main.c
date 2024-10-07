@@ -41,8 +41,8 @@
 
 spi_device_handle_t spi;
 i2c_master_bus_handle_t bus_handle;
-#define ESP_WIFI_SSID "Hoang Sang"
-#define ESP_WIFI_PASS "hoilamgi"
+#define ESP_WIFI_SSID ""
+#define ESP_WIFI_PASS ""
 #define ESP_MAXIMUM_RETRY 4
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
