@@ -203,7 +203,6 @@ void DrawList(){
             }
         }
     }
-    
     xSemaphoreGive(spi_xSemaphore);
     while(1){
         if(Aindex > s){
