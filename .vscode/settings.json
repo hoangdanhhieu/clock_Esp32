@@ -36,7 +36,27 @@
     "chrono": "c",
     "esp_attr.h": "c",
     "st7789.h": "c",
-    "pulse_cnt.h": "c"
-  }
+    "pulse_cnt.h": "c",
+    "esp_wifi.h": "c",
+    "home_screen.h": "c",
+    "nvs_flash.h": "c",
+    "animated.h": "c",
+    "adc_types.h": "c",
+    "queue.h": "c",
+    "event_groups.h": "c",
+    "variant": "cpp",
+    "numeric": "c",
+    "format": "c",
+    "fstream": "c",
+    "iostream": "c",
+    "istream": "c",
+    "ostream": "c",
+    "regex": "c",
+    "typeinfo": "c",
+    "cstdio": "c"
+  },
+  "idf.espIdfPath": "/home/nonamezz/esp/v5.3/esp-idf",
+  "idf.toolsPath": "/home/nonamezz/.espressif",
+  "idf.pythonInstallPath": "/usr/bin/python3"
   
 }

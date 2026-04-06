@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#ifndef FONT_H
+#define FONT_H
+
 typedef struct font_char {
     int offset;
     int w;
@@ -3262,3 +3265,5 @@ static const uint8_t font_pixels25[] = {
     0x20,0xe3,0xff,0xff,0x9b,0x00, // .%@@+ 
     0x00,0x0e,0x4e,0x3a,0x00,0x00, //   -:  
 };
+
+#endif // FONT_H

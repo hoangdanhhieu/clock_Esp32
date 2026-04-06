@@ -1,4 +1,5 @@
-#include "st7789.h"
+#include "ili9341.h"
+#include "driver/ledc.h"
 #include "define.h"
 typedef struct {
     uint8_t cmd;
@@ -7,7 +8,7 @@ typedef struct {
                        // of cmds.
 } lcd_init_cmd_t;
 
-lcd_init_cmd_t st7789v_init_command[] = {
+lcd_init_cmd_t ili9341_init_command[] = {
     // Sleep out
     {0x11, {0x00}, 0},
     // Normal Display Mode On
@@ -15,13 +16,13 @@ lcd_init_cmd_t st7789v_init_command[] = {
     // Gamma Set
     {0x51, {0x01}, 1},
     // Memory Data Access Control
-    {0x36, {0x60}, 1},
+    {0x36, {0x68}, 1},
     // Idle Mode Off
     {0x38, {0x00}, 0},
     // Vertical Scrolling Definition
     {0x33, {0x00, 0x00, 0x01, 0x40, 0x00, 0x00}, 6},
     // Interface Pixel Format
-    {0x3A, {0x63}, 1},
+    {0x3A, {0x55}, 1}, 
     // Write CTRL Display
     //{0x53, {0x24}, 1},
     // Write Display Brightness
@@ -31,7 +32,7 @@ lcd_init_cmd_t st7789v_init_command[] = {
     // Frame Rate Control in Normal Mode
     {0x06, {0x05}, 1},
     // Display Inversion Off
-    {0x21, {0x00}, 0},
+    //{0x21, {0x00}, 0},
     // Display On
     {0x29, {0x00}, 0x08},
 };
@@ -71,7 +72,7 @@ void IRAM_ATTR lcd_data(spi_device_handle_t spi, const uint8_t *data, int len) {
 }
 
 static spi_transaction_t trans[6];
-void IRAM_ATTR lcd_print_data(spi_device_handle_t spi, uint16_t Xs, uint16_t Xe,
+void IRAM_ATTR lcd_send_buffer(spi_device_handle_t spi, uint16_t Xs, uint16_t Xe,
                      uint16_t Ys, uint16_t Ye, const uint8_t *data, int len) {
     esp_err_t ret; 
     // Column Address Set;
@@ -100,7 +101,7 @@ void IRAM_ATTR lcd_print_data(spi_device_handle_t spi, uint16_t Xs, uint16_t Xe,
     }
 }
 
-void IRAM_ATTR show_text(spi_device_handle_t spi, const uint8_t *str,
+void IRAM_ATTR show_text(const uint8_t *str,
                     color_struct *font_color, color_struct *bg_color, uint16_t Xs, uint16_t Ys,
                     const struct font_char char_map[], const uint8_t font_pixels[]){
     xSemaphoreTake(spi_xSemaphore, portMAX_DELAY);  
@@ -129,10 +130,8 @@ void IRAM_ATTR show_text(spi_device_handle_t spi, const uint8_t *str,
                     last_color.g = (uint8_t)((font_color->g * alpha) + (oneminusalpha * bg_color->g));
                     last_color.b = (uint8_t)((font_color->b * alpha) + (oneminusalpha * bg_color->b));
                     last_v = v;
-                    write_buffer(lcd_buffer, x, y, last_color);
-                } else {
-                    write_buffer(lcd_buffer, x, y, last_color);
                 }
+                write_buffer(lcd_buffer, x, y, last_color);
             }
         }
         Xs = Xs + font_c.advance;
@@ -147,7 +146,7 @@ void spi2_lcd_init(spi_device_handle_t *spi) {
                                   .sclk_io_num = PIN_NUM_CLK,
                                   .quadwp_io_num = -1,
                                   .quadhd_io_num = -1,
-                                  .max_transfer_sz = 28800};
+                                  .max_transfer_sz = 25600};
     spi_device_interface_config_t devcfg = {
         .mode = 0,
         .clock_speed_hz = SPI_MASTER_FREQ_40M,
@@ -164,29 +163,37 @@ void spi2_lcd_init(spi_device_handle_t *spi) {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     spi_device_acquire_bus(*spi, portMAX_DELAY);
     for (int cmd = 0;
-            cmd < sizeof(st7789v_init_command) / sizeof(st7789v_init_command[0]);
+            cmd < sizeof(ili9341_init_command) / sizeof(ili9341_init_command[0]);
             cmd++) {
-        lcd_cmd(*spi, st7789v_init_command[cmd].cmd, true);
-        lcd_data(*spi, st7789v_init_command[cmd].data,
-                 st7789v_init_command[cmd].databytes);
-        if (st7789v_init_command[cmd].databytes != 0) {
+        lcd_cmd(*spi, ili9341_init_command[cmd].cmd, true);
+        lcd_data(*spi, ili9341_init_command[cmd].data,
+                 ili9341_init_command[cmd].databytes);
+        if (ili9341_init_command[cmd].databytes != 0) {
             vTaskDelay(100 / portTICK_PERIOD_MS);
         }
     }
-    printf("LCD ID: %" PRIu32 "\n", lcd_get_id(*spi));
-}
 
-void IRAM_ATTR fill_display(spi_device_handle_t spi, color_struct *bg_color) {
-    xSemaphoreTake(spi_xSemaphore, portMAX_DELAY);
-    for (int y = 0; y < 240; y++) {
-        for(int x = 0; x < 320; x++){
-            write_buffer(lcd_buffer, x, y, *bg_color);
-        }
-    }
-    xSemaphoreGive(spi_xSemaphore);
-}
+    ledc_timer_config_t pwm_tmr_cfg = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .duty_resolution = LEDC_TIMER_13_BIT,
+        .timer_num = LEDC_TIMER_1,
+        .freq_hz = 1000,
+        .clk_cfg = LEDC_AUTO_CLK
+    };
+    ledc_channel_config_t pwm_chn_cfg = {
+        .gpio_num = PIN_NUM_LED,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_1,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 0,
+    };
+    ledc_timer_config(&pwm_tmr_cfg);
+    ledc_channel_config(&pwm_chn_cfg);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 3000);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+    fill_display(&bg_color);
 
-uint32_t lcd_get_id(spi_device_handle_t spi) {
     for(int i = 0; i < 6; i++){
         memset(&trans[i], 0, sizeof(spi_transaction_t));
     }
@@ -209,6 +216,22 @@ uint32_t lcd_get_id(spi_device_handle_t spi) {
     trans[4].user = (void *)0;
     trans[4].tx_data[0] = 0x2c;
     trans[5].user = (void *)1;
+    //printf("LCD ID: %" PRIu32 "\n", lcd_get_id(*spi));
+}
+
+void IRAM_ATTR fill_display(color_struct *bg_color) {
+    xSemaphoreTake(spi_xSemaphore, portMAX_DELAY);
+    for (int y = 0; y < 240; y++) {
+        for(int x = 0; x < 320; x++){
+            write_buffer(lcd_buffer, x, y, *bg_color);
+        }
+    }
+    xSemaphoreGive(spi_xSemaphore);
+}
+
+
+
+uint32_t lcd_get_id(spi_device_handle_t spi) {
     // get_id cmd
     lcd_cmd(spi, 0x04, true);
 

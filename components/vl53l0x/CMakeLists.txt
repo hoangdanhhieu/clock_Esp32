@@ -1,0 +1,2 @@
+idf_component_register(SRCS "vl53l0x_init.c" "vl53l0x_api.c" "vl53l0x_api_calibration.c" "vl53l0x_api_core.c" "vl53l0x_api_ranging.c" "vl53l0x_tof.c" "vl53l0x_api_strings.c"
+            INCLUDE_DIRS "." REQUIRES esp_driver_i2c driver define)

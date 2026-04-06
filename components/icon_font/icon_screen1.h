@@ -1,4 +1,8 @@
+#ifndef ICON_SCREEN1_H
+#define ICON_SCREEN1_H
+
 #include <stdint.h>
+
 
 struct icon_char {
     int offset;
@@ -145,3 +149,5 @@ static const uint8_t icon_pixels[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+
+#endif // ICON_SCREEN1_H

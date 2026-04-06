@@ -21,16 +21,36 @@ void init_aht30(i2c_master_bus_handle_t bus_handle){
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 }
 
+void remove_aht30(){
+    ESP_ERROR_CHECK(i2c_master_bus_rm_device(dev_handle));
+}
+
 void aht30_read(float *humi, float *temp){
     uint8_t read_buffer[7];
     uint32_t humidity_raw, temperature_raw;
-    i2c_master_transmit(dev_handle, measure_command, 3, -1);
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    i2c_master_receive(dev_handle, read_buffer, 7, -1);
+    
+    esp_err_t ret = i2c_master_transmit(dev_handle, measure_command, 3, 200);
+    if(ret != ESP_OK) {
+        ESP_LOGW("AHT30", "Failed to send measure command: %d", ret);
+        return;
+    }
+    
+    vTaskDelay(80 / portTICK_PERIOD_MS);  // Reduced from 100ms
+    
+    ret = i2c_master_receive(dev_handle, read_buffer, 7, 200);
+    if(ret != ESP_OK) {
+        ESP_LOGW("AHT30", "Failed to receive data: %d", ret);
+        return;
+    }
+    
     if ((read_buffer[0] & 0x80) != 0){
         ESP_LOGI("AHT30_debug", "Measuring in progress");
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        i2c_master_receive(dev_handle, read_buffer, 7, -1);
+        vTaskDelay(50 / portTICK_PERIOD_MS);  // Reduced from 100ms
+        ret = i2c_master_receive(dev_handle, read_buffer, 7, 200);
+        if(ret != ESP_OK) {
+            ESP_LOGW("AHT30", "Failed to receive data (retry): %d", ret);
+            return;
+        }
     }
     if(Calc_CRC8(read_buffer, 6) != read_buffer[6]){
         ESP_LOGI("AHT30_debug", "CRC error");

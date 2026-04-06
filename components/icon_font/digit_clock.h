@@ -1,3 +1,6 @@
+#ifndef DIGIT_CLOCK_H
+#define DIGIT_CLOCK_H
+
 #include <stdint.h>
 
 
@@ -678,3 +681,5 @@ static const uint8_t clock_pixels[] = {
     0x31,0xff,0xff,0xff,0xff,0xff,0xff,0xfa,0x00,0x00,0x00,0x00, // .@@@@@@@    
     0x00
 };
+
+#endif // DIGIT_CLOCK_H
