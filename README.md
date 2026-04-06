@@ -2,9 +2,7 @@
 
 A feature-rich smart desk clock built on the **ESP32-C6** microcontroller using **ESP-IDF v5.3**. The device combines real-time clock display, environmental sensing, interactive animations, and wireless connectivity into a compact embedded system with a vivid TFT LCD interface.
 
-<p align="center">
-  <img src="images/img1.jpg" alt="ESP32-C6 Smart Clock" width="600"/>
-</p>
+![Demo](Images/img1.jpg)
 
 ---
 
